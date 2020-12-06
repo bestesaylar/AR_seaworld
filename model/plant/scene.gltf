@@ -3,50 +3,50 @@
     {
       "bufferView": 2,
       "componentType": 5126,
-      "count": 1182,
+      "count": 70,
       "max": [
-        33.299465179443359,
-        25.003414154052734,
-        152.75518798828125
+        1.4474999904632568,
+        1.5030999183654785,
+        0.41049998998641968
       ],
       "min": [
-        -28.255115509033203,
-        -24.189300537109375,
-        -0.1803472638130188
+        0,
+        0,
+        0
       ],
       "type": "VEC3"
     },
     {
       "bufferView": 2,
-      "byteOffset": 14184,
+      "byteOffset": 840,
       "componentType": 5126,
-      "count": 1182,
+      "count": 70,
       "max": [
-        0.99999445676803589,
-        0.99996507167816162,
-        0.62671959400177002
+        0.6272284984588623,
+        0.56100374460220337,
+        0.99971407651901245
       ],
       "min": [
-        -0.99994772672653198,
-        -0.99996232986450195,
-        -1
+        -0.54979628324508667,
+        -0.62720638513565063,
+        0.77879482507705688
       ],
       "type": "VEC3"
     },
     {
       "bufferView": 3,
       "componentType": 5126,
-      "count": 1182,
+      "count": 70,
       "max": [
-        0.98570984601974487,
-        0.99996179342269897,
-        0.99988692998886108,
+        0.90121239423751831,
+        0.88351958990097046,
+        0.0020150044001638889,
         1
       ],
       "min": [
-        -0.97205233573913574,
-        -0.9985700249671936,
-        -0.99968546628952026,
+        -0.99989932775497437,
+        -0.99999970197677612,
+        -0.0099924672394990921,
         1
       ],
       "type": "VEC4"
@@ -54,38 +54,23 @@
     {
       "bufferView": 1,
       "componentType": 5126,
-      "count": 1182,
+      "count": 70,
       "max": [
-        0.98207873106002808,
-        0.93946433067321777
+        0.99370002746582031,
+        0.99800002574920654
       ],
       "min": [
-        0.0078080035746097565,
-        0.026643997058272362
-      ],
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 1,
-      "byteOffset": 9456,
-      "componentType": 5126,
-      "count": 1182,
-      "max": [
-        0.98207873106002808,
-        0.93946433067321777
-      ],
-      "min": [
-        0.0078080035746097565,
-        0.026643997058272362
+        0.0019000000320374966,
+        0.0019000000320374966
       ],
       "type": "VEC2"
     },
     {
       "bufferView": 0,
       "componentType": 5125,
-      "count": 5616,
+      "count": 168,
       "max": [
-        1181
+        69
       ],
       "min": [
         0
@@ -95,42 +80,42 @@
   ],
   "asset": {
     "extras": {
-      "author": "bariacg (https://sketchfab.com/bariacg)",
-      "license": "SKETCHFAB Standard (https://sketchfab.com/licenses)",
-      "source": "https://sketchfab.com/models/0bd3e369b6234fc6ae646e5d90e7dd7a",
-      "title": "Seaweed"
+      "author": "Xillute | Dev (https://sketchfab.com/janchristian)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/models/dc44b9959b824804a11aa64972221905",
+      "title": "Plant"
     },
-    "generator": "Sketchfab-4.14.0",
+    "generator": "Sketchfab-3.19.6",
     "version": "2.0"
   },
   "bufferViews": [
     {
       "buffer": 0,
-      "byteLength": 22464,
+      "byteLength": 672,
       "byteOffset": 0,
       "name": "floatBufferViews",
       "target": 34963
     },
     {
       "buffer": 0,
-      "byteLength": 18912,
-      "byteOffset": 22464,
+      "byteLength": 560,
+      "byteOffset": 672,
       "byteStride": 8,
       "name": "floatBufferViews",
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 28368,
-      "byteOffset": 41376,
+      "byteLength": 1680,
+      "byteOffset": 1232,
       "byteStride": 12,
       "name": "floatBufferViews",
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 18912,
-      "byteOffset": 69744,
+      "byteLength": 1120,
+      "byteOffset": 2912,
       "byteStride": 16,
       "name": "floatBufferViews",
       "target": 34962
@@ -138,32 +123,25 @@
   ],
   "buffers": [
     {
-      "byteLength": 88656,
+      "byteLength": 4032,
       "uri": "scene.bin"
     }
   ],
   "images": [
     {
-      "uri": "textures/Seaweed_normal.png"
-    },
-    {
-      "uri": "textures/Seaweed_baseColor.png"
+      "uri": "textures/material_0_baseColor.png"
     }
   ],
   "materials": [
     {
+      "alphaMode": "BLEND",
       "doubleSided": true,
       "emissiveFactor": [
         0,
         0,
         0
       ],
-      "name": "Seaweed",
-      "normalTexture": {
-        "index": 0,
-        "scale": 1,
-        "texCoord": 0
-      },
+      "name": "material_0",
       "pbrMetallicRoughness": {
         "baseColorFactor": [
           1,
@@ -172,27 +150,25 @@
           1
         ],
         "baseColorTexture": {
-          "index": 1,
+          "index": 0,
           "texCoord": 0
         },
         "metallicFactor": 0,
-        "roughnessFactor": 0.50171493899999997
+        "roughnessFactor": 1
       }
     }
   ],
   "meshes": [
     {
-      "name": "Seaweed_Seaweed_0",
       "primitives": [
         {
           "attributes": {
             "NORMAL": 1,
             "POSITION": 0,
             "TANGENT": 2,
-            "TEXCOORD_0": 3,
-            "TEXCOORD_1": 4
+            "TEXCOORD_0": 3
           },
-          "indices": 5,
+          "indices": 4,
           "material": 0,
           "mode": 4
         }
@@ -228,53 +204,29 @@
         0,
         0,
         0,
-        0,
         1,
         0,
         0,
-        -1,
         0,
         0,
+        1,
         0,
-        0,
-        0,
+        -0.72170001268386841,
+        -0.76800000667572021,
+        0.0027000000700354576,
         1
       ],
-      "name": "42f18ad3d40a4725b6f2fe74979746a0.fbx"
+      "name": "981bb7ada4fa44298a351a38a37e106c.obj.cleaner.gles"
     },
     {
       "children": [
         4
       ],
-      "name": "RootNode"
-    },
-    {
-      "children": [
-        5
-      ],
-      "matrix": [
-        1,
-        0,
-        0,
-        0,
-        0,
-        2.2204460492503131e-16,
-        -1,
-        0,
-        0,
-        1,
-        2.2204460492503131e-16,
-        0,
-        0,
-        0,
-        0,
-        1
-      ],
-      "name": "Seaweed"
+      "name": ""
     },
     {
       "mesh": 0,
-      "name": "Seaweed_Seaweed_0"
+      "name": ""
     }
   ],
   "samplers": [
@@ -298,10 +250,6 @@
     {
       "sampler": 0,
       "source": 0
-    },
-    {
-      "sampler": 0,
-      "source": 1
     }
   ]
 }
