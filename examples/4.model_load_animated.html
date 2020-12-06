@@ -1,168 +1,583 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <title>webxr - model animation</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <meta name="author" content="Beste Saylar" />
+    <link type="text/css" rel="stylesheet" href="main.css" />
+  </head>
 
-<head>
-	<title>webxr - model animation</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-	<meta name="author" content="Irene Alvarado">
-	<link type="text/css" rel="stylesheet" href="main.css">
-</head>
+  <body>
+    <div id="overlay-ui"></div>
+    <div id="console-ui"></div>
 
-<body>
-	<div id="overlay-ui">
-	</div>
+    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+      eruda.init({
+        container: document.getElementById("console-ui")
+      });
+    </script>
 
-	<div id="console-ui">
-	</div>
-	<script src="//cdn.jsdelivr.net/npm/eruda"></script>
-	<script>
-		eruda.init({
-			container: document.getElementById('console-ui')
-		});
-	</script>
+    <script type="module">
+      // model from: https://sketchfab.com/3d-models/simple-spotted-jellyfish-baked-animation-d5006697ad3c4bc1ac814110cde19af2
 
-	<script type="module">
-		// model from: https://sketchfab.com/3d-models/simple-spotted-jellyfish-baked-animation-d5006697ad3c4bc1ac814110cde19af2
+      import * as THREE from "../threejs/three.module.js";
+      import { ARButton } from "../threejs/jsm/webxr/ARButton.js";
+      import { GLTFLoader } from "../threejs/jsm/loaders/GLTFLoader.js";
 
-		import * as THREE from '../threejs/three.module.js';
-		import { ARButton } from '../threejs/jsm/webxr/ARButton.js';
-		import { GLTFLoader } from '../threejs/jsm/loaders/GLTFLoader.js';
+      let container;
+      let camera, scene, renderer;
+      let controller;
+      let loader;
+      let model;
+      let mixers = [];
+      let mixer;
+      let reticle;
+      let cube;
 
-		let container;
-		let camera, scene, renderer;
-		let controller;
-		let loader;
-		let model;
-		let mixer;
-		const clock = new THREE.Clock();
+      const clock = new THREE.Clock();
 
-		init();
-		animate();
+      init();
+      animate();
 
-		function init() {
-			container = document.createElement('div');
-			document.body.appendChild(container);
+      function init() {
+        container = document.createElement("div");
+        document.body.appendChild(container);
 
-			scene = new THREE.Scene();
+        scene = new THREE.Scene();
 
-			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+        camera = new THREE.PerspectiveCamera(
+          70,
+          window.innerWidth / window.innerHeight,
+          0.01,
+          20
+        );
 
-			renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
-			// renderer.outputEncoding = THREE.sRGBEncoding;
-			renderer.xr.enabled = true; // we have to enable the renderer for webxr
-			container.appendChild(renderer.domElement);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.xr.enabled = true; // we have to enable the renderer for webxr
+        container.appendChild(renderer.domElement);
 
-			// Add a light to the cene
-			var light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-			light.position.set(0.5, 1, 0.25);
-			scene.add(light);
+        let distanceFromCamera = 0.08;
+        // Create a cube that we will keep in front of the camera
+        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x006994,
+          opacity: 0.3
+        });
+        cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
 
-			// load the model texture
-			const textureLoader = new THREE.TextureLoader();
-			const texture = textureLoader.load("../model/Spotted-Jelly.png");
-      //load the model 2 texture
-      const textureLoader2 = new THREE.TextureLoader();
-			const texture2 = textureLoader.load("../model/Spotted-Jelly.png");
-      
-			// read more about why we need these settings here
-			// https://threejs.org/docs/#examples/en/loaders/GLTFLoader
-			texture.encoding = THREE.sRGBEncoding;
-			texture.flipY = false;
+        controller = renderer.xr.getController(0);
+        scene.add(controller);
 
-			// Load the GLTF model
-			loader = new GLTFLoader();
-			loader.load(
-				'../model/Spotted-Jelly.gltf',
-				// onLoad callback: what get's called once the full model has loaded
-				(gltf) => {
-					model = gltf.scene;
-					model.position.z = -3; // change the z position a bit
-					addTextureToModel(texture); // add a texture to the model
+        // Add a light to the cene
+        var light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+        light.position.set(0.5, 1, 0.25);
+        scene.add(light);
 
-					// setup the model animation
-					// read more about animation here: 
-					// https://threejs.org/docs/#manual/en/introduction/Animation-system
-					// a mixer object controls the actual playback of the animation
-					mixer = new THREE.AnimationMixer(gltf.scene);
-					// the gltf animations array contains animtation clips for the model
-					console.log(gltf.animations);
-					gltf.animations.forEach((clip) => {
-						const action = mixer.clipAction(clip);
-						action.play(); // start playing each animation clip
-					});
+        // // // load a transparent image
+        // const secondImageMesh = createMeshWithImage(
+        //   "https://cdn.glitch.com/d77a352b-f9b6-4b4e-98ed-19fa7c95152f%2Fsea.png?v=1607122450478"
+        // );
+        // secondImageMesh.position.set(0, 0, -1);
+        // scene.add(secondImageMesh);
 
-					scene.add(gltf.scene);
-				},
-				// onProgress callback: optional function for showing progress on model load
-				undefined,
-				// onError callback
-				(error) => {
-					console.error(error);
-				}
-			);
+        controller = renderer.xr.getController(0);
+        controller.addEventListener("select", onSelect);
+        scene.add(controller);
 
-			document.body.appendChild(ARButton.createButton(renderer, {
-				optionalFeatures: ['dom-overlay'],
-				domOverlay: { root: document.body }
-			}));
-			renderer.domElement.style.display = 'none'; // need to add this to see the UI
+        // load the model texture
+        const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load("../model/Spotted-Jelly.png");
 
-			window.addEventListener('resize', onWindowResize, false);
-		}
+        //load other models texture
+        const texture2 = textureLoader.load(
+          "../model/crown_jellyfish/textures/Crown-jelly_Coronatae_tentacle_baseColor.png"
+        );
+        const texture3 = textureLoader.load(
+          "../model/crown_jellyfish2/textures/Crown-jelly_arm_baseColor.png"
+        );
+        //ask if there is two texture file
+        const texture4 = textureLoader.load(
+          "../model/crystal_jellyfish/textures/Crystal-jelly_tentacle_baseColor.png"
+        );
+        const texture5 = textureLoader.load(
+          "../model/marrusdeep-sea_jellyfish/textures/Marrus_nectosome1_baseColor.png"
+        );
+        const texture6 = textureLoader.load(
+          "../model/solmundella_jellyfish/textures/Solmundella-jelly_mat_baseColor.png"
+        );
+        const texture7 = textureLoader.load(
+          "../model/plant/textures/material_0_baseColor.png"
+        );
 
-		function onWindowResize() {
-			camera.aspect = window.innerWidth / window.innerHeight;
-			camera.updateProjectionMatrix();
+        //fish
 
-			renderer.setSize(window.innerWidth, window.innerHeight);
-		}
+        // read more about why we need these settings here
+        // https://threejs.org/docs/#examples/en/loaders/GLTFLoader
+        texture.encoding = THREE.sRGBEncoding;
+        texture.flipY = false;
 
-		// this function is only called one time
-		function animate() {
-			// here we set the render function to be called in a loop
-			renderer.setAnimationLoop(render);
-		}
+        texture2.encoding = THREE.sRGBEncoding;
+        texture2.flipY = false;
 
-		// render function called on a loop every time the screen is refreshed
-		// which typically means 60 times a second (60 frames per second)
-		function render() {
-			const delta = clock.getDelta();
-			if (mixer) {
-				// Update the animation mixer on each frame
-				mixer.update(delta);
-			}
+        texture3.encoding = THREE.sRGBEncoding;
+        texture3.flipY = false;
 
-			renderer.render(scene, camera);
-		}
+        texture4.encoding = THREE.sRGBEncoding;
+        texture4.flipY = false;
 
-		function scaleGroup(parentModel, scale) {
-			for (const child of parentModel.children) {
-				if (child.type === 'Group') {
-					scaleGroup(child, scale);
-				} else {
-					console.log(child);
-					child.scale.set(scale, scale, scale);
-				}
-			}
-		}
+        texture5.encoding = THREE.sRGBEncoding;
+        texture5.flipY = false;
 
-		function addTextureToModel(textureToAdd) {
-			model.traverse((child) => {
-				if (child instanceof THREE.Mesh) {
-					child.material.map = textureToAdd;
+        texture6.encoding = THREE.sRGBEncoding;
+        texture6.flipY = false;
 
-					// Probably need the lines below if you will change the texture after 
-					// the model has been added to the scene
-					// child.material.needsUpdate = true;
-					// child.material.map.needsUpdate = true;
-				}
-			});
-		}
+        texture7.encoding = THREE.sRGBEncoding;
+        texture7.flipY = false;
+        // Load the GLTF model
 
-	</script>
-</body>
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/Spotted-Jelly.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.z = -3; // change the z position a bit
+            addTextureToModel(texture); // add a texture to the model
 
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              action.play(); // start playing each animation clip
+            });
+
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+
+        // Load the 2 GLTF model
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/crown_jellyfish/scene.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.z = -48; // change the z position a bit
+            addTextureToModel(texture2); // add a texture to the model
+
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              action.setLoop(THREE.LoopRepeat);
+              // actions.idle.clampWhenFinished = true;
+              action.play(); // start playing each animation clip
+            });
+
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+
+        // Load the 3 GLTF model
+
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/crown_jellyfish2/scene.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.z = -8; // change the z position a bit
+            model.position.x = -35; // change the z position a bit
+            addTextureToModel(texture3); // add a texture to the model
+
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              action.play(); // start playing each animation clip
+            });
+
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+
+        // Load the 4 GLTF model
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/crystal_jellyfish/scene.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.z = -15; // change the z position a bit
+            model.position.x = 26; // change the z position a bit
+            addTextureToModel(texture4); // add a texture to the model
+
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              action.play(); // start playing each animation clip
+            });
+
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+
+        // Load the 5 GLTF model
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/marrusdeep-sea_jellyfish/scene.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.z = -15; // change the z position a bit
+            model.position.x = 20; // change the z position a bit
+            addTextureToModel(texture5); // add a texture to the model
+
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              action.play(); // start playing each animation clip
+            });
+
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+
+        // Load the 6 GLTF model
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/solmundella_jellyfish/scene.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.z = -7; // change the z position a bit
+            model.position.x = -10; // change the z position a bit
+            addTextureToModel(texture6); // add a texture to the model
+
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              action.play(); // start playing each animation clip
+            });
+
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+
+        document.body.appendChild(
+          ARButton.createButton(renderer, {
+            requiredFeatures: ["hit-test"],
+            optionalFeatures: ["dom-overlay"],
+            domOverlay: { root: document.body }
+          })
+        );
+        renderer.domElement.style.display = "none"; // need to add this to see the UI
+
+        window.addEventListener("resize", onWindowResize, false);
+      }
+
+      addReticleToScene();
+
+      function onSelect() {
+        loader = new GLTFLoader();
+        //reticle
+        if (reticle.visible) {
+          //                 const geometry = new THREE.CylinderBufferGeometry(0, 0.05, 0.2, 32);
+          //                 const material = new THREE.MeshPhongMaterial({ color: 0xffffff * Math.random() });
+          //                 const mesh = new THREE.Mesh(geometry, material);
+
+          //                 // set the position of the cylinder based on where the reticle is
+          //                 mesh.position.setFromMatrixPosition(reticle.matrix);
+
+          //                 scene.add(mesh);
+          loader.load(
+            "../model/plant/scene.gltf",
+            // onLoad callback: what get's called once the full model has loaded
+            gltf => {
+              model = gltf.scene;
+              // addTextureToModel(texture7); // add a texture to the model
+              // setup the model animation
+              // read more about animation here:
+              // https://threejs.org/docs/#manual/en/introduction/Animation-system
+              // a mixer object controls the actual playback of the animation
+              model.position.setFromMatrixPosition(reticle.matrix);
+              mixer = new THREE.AnimationMixer(gltf.scene);
+              mixers.push(mixer);
+              // the gltf animations array contains animtation clips for the model
+              console.log(gltf.animations);
+              gltf.animations.forEach(clip => {
+                const action = mixer.clipAction(clip);
+                action.play(); // start playing each animation clip
+              });
+
+              scene.add(gltf.scene);
+            },
+            // onProgress callback: optional function for showing progress on model load
+            undefined,
+            // onError callback
+            error => {
+              console.error(error);
+            }
+          );
+        }
+        //fish
+        loader = new GLTFLoader();
+        loader.load(
+          "../model/the_fish_particle/scene.gltf",
+          // onLoad callback: what get's called once the full model has loaded
+          gltf => {
+            model = gltf.scene;
+            model.position.set(0, 0, -0.5); // change the z position a bit
+            model.position.applyMatrix4(controller.matrixWorld);
+            model.quaternion.setFromRotationMatrix(controller.matrixWorld);
+            // addTextureToModel(texture6); // add a texture to the model
+
+            // setup the model animation
+            // read more about animation here:
+            // https://threejs.org/docs/#manual/en/introduction/Animation-system
+            // a mixer object controls the actual playback of the animation
+            const mixer = new THREE.AnimationMixer(gltf.scene);
+            mixers.push(mixer);
+            // the gltf animations array contains animtation clips for the model
+            console.log(gltf.animations);
+            gltf.animations.forEach(clip => {
+              const action = mixer.clipAction(clip);
+              console.log("loop");
+              // action.setLoop(THREE.LoopRepeat);
+              // actions.idle.clampWhenFinished = true;
+              action.play(); // start playing each animation clip
+            });
+            scene.add(gltf.scene);
+          },
+          // onProgress callback: optional function for showing progress on model load
+          undefined,
+          // onError callback
+          error => {
+            console.error(error);
+          }
+        );
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // this function is only called one time
+      function animate() {
+        // here we set the render function to be called in a loop
+        renderer.setAnimationLoop(render);
+      }
+
+      function addReticleToScene() {
+        const geometry = new THREE.RingBufferGeometry(0.15, 0.2, 32).rotateX(
+          -Math.PI / 2
+        );
+        const material = new THREE.MeshBasicMaterial();
+
+        reticle = new THREE.Mesh(geometry, material);
+
+        reticle.matrixAutoUpdate = false;
+        reticle.visible = false;
+        scene.add(reticle);
+
+        reticle.add(new THREE.AxesHelper(1));
+      }
+
+      //       function render() {
+      //         const delta = clock.getDelta();
+
+      //         if (mixers.length > 0) {
+      //           for (const mixer of mixers) {
+      //             mixer.update(delta); // updating mixer for model1, updating mixer for model2, updating mixer for model3....
+      //           }
+      //         }
+
+      //         renderer.render(scene, camera);
+      //       }
+
+      let hitTestSourceInitialized = false;
+      let hitTestSource;
+      function render(timestamp, frame) {
+        const delta = clock.getDelta();
+
+        if (mixers.length > 0) {
+          for (const mixer of mixers) {
+            mixer.update(delta); // updating mixer for model1, updating mixer for model2, updating mixer for model3....
+          }
+        }
+
+        if (frame) {
+          const session = renderer.xr.getSession();
+
+          if (hitTestSourceInitialized === false) {
+            session.requestReferenceSpace("viewer").then(viewerSpace => {
+              session
+                .requestHitTestSource({ space: viewerSpace })
+                .then(source => {
+                  hitTestSource = source;
+                });
+            });
+
+            session.addEventListener("end", () => {
+              hitTestSourceInitialized = false;
+              hitTestSource = null;
+            });
+
+            hitTestSourceInitialized = true;
+          }
+
+          if (hitTestSource !== null) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+            if (hitTestResults.length) {
+              const referenceSpace = renderer.xr.getReferenceSpace();
+
+              const hit = hitTestResults[0];
+
+              const relativePose = hit.getPose(referenceSpace);
+
+              const transformationMatrix = relativePose.transform.matrix;
+
+              reticle.visible = true;
+              reticle.matrix.fromArray(transformationMatrix);
+            }
+          }
+
+          renderer.render(scene, camera);
+        }
+      }
+
+      //Render
+
+      function scaleGroup(parentModel, scale) {
+        for (const child of parentModel.children) {
+          if (child.type === "Group") {
+            scaleGroup(child, scale);
+          } else {
+            console.log(child);
+            child.scale.set(scale, scale, scale);
+          }
+        }
+      }
+
+      function addTextureToModel(textureToAdd) {
+        model.traverse(child => {
+          if (child instanceof THREE.Mesh) {
+            child.material.map = textureToAdd;
+
+            // Probably need the lines below if you will change the texture after
+            // the model has been added to the scene
+            // child.material.needsUpdate = true;
+            // child.material.map.needsUpdate = true;
+          }
+        });
+      }
+
+      //             function createMeshWithImage(imagePath) {
+      //               // create a texture loader and a material
+      //               const loader = new THREE.TextureLoader();
+      //               const material = new THREE.MeshLambertMaterial({
+      //                 map: loader.load(imagePath),
+      //                 side: THREE.DoubleSide // comment if you only want one side
+      //               });
+
+      //               // create a plane gemetry with width = 0.5 and height = 0.5
+      //               // if your image is not square you need to edit these numbers
+      //               // to maintain the aspect ratio
+      //               const geometry = new THREE.PlaneGeometry(3.5, 3.5);
+
+      //               // create a 3D mesh which requires a gemetry and texture
+      //               const mesh = new THREE.Mesh(geometry, material);
+
+      //               return mesh;
+      //             }
+    </script>
+  </body>
 </html>
